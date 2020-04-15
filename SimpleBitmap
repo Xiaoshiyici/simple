@@ -1,0 +1,115 @@
+package com.mycompany.mandelbrot;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
+import javax.swing.JPanel;
+
+/**
+ *
+ * @author Ziyu Guo
+ * @version 14 April 2020
+ */
+ public class SimpleBitmap extends JPanel {
+
+    private static final int BITMAP_WIDTH = 600;
+    private static final int BITMAP_HEIGHT = 600;
+    private static final int THRESHOLD = 50;
+    private BufferedImage image;
+
+     public SimpleBitmap() {
+        int w = BITMAP_WIDTH;
+        int h = BITMAP_HEIGHT;
+        int imageType = BufferedImage.TYPE_INT_RGB;
+        this.setBackground(Color.CYAN);
+        this.image = new BufferedImage(w, h, imageType);
+    } // SimpleBitMap() 
+   
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+
+        int w = this.getWidth();
+        int h = this.getHeight();
+
+        AffineTransform scale = new AffineTransform();
+        scale.setToScale(((double) w) / BITMAP_WIDTH,
+                ((double) h) / BITMAP_HEIGHT);
+
+        WritableRaster raster = this.image.getRaster();
+
+        int[][] palatte = new int[64][3];
+        
+     Color startColor = Color.PINK;
+        int r0 = startColor.getRed();
+        int g0 = startColor.getGreen();
+        int b0 = startColor.getBlue();
+
+        Color endColor = Color.GREEN;
+        int r1 = endColor.getRed();
+        int g1 = endColor.getGreen();
+        int b1 = endColor.getBlue();
+
+        for (int i = 0; i < 64; i++) {
+            double fraction = ((double) i) / 63;
+            int red = (int) (fraction * r0 + fraction * r1);
+            int green = (int) (fraction * g0 + fraction * g1);
+            int blue = (int) (fraction * b0 + fraction * b1);
+
+            palatte[i][0] = red;
+            palatte[i][1] = green;
+            palatte[i][2] = blue;
+
+        } // for
+
+        int[] dimGray = {105, 105, 105};
+        
+        double xMin = 0;
+        double xMax = BITMAP_WIDTH - 1;
+        double yMin = 0;
+        double yMax = BITMAP_HEIGHT - 1;
+        
+        double uMin = -0.5;
+        double uMax = 1;
+        double vMin = -1;
+        double vMax = 1.5;
+        for (int row = 0; row < BITMAP_HEIGHT; row++) {
+            double y = row;
+            for (int column = 0; column < BITMAP_WIDTH; column++) {
+                double x = column;
+                
+                double u = uMin + (uMax - uMin) * (x - xMin) / (xMax - xMin);
+                double v = vMin + (vMax - vMin) * (y - yMin) / (yMax - yMin);
+                
+                // Create z with components (0.0, 0.0)            
+                Complex z = new Complex(u, v);
+
+                // Create c with components map(row, column)
+                Complex c = new Complex(0.3141, 0.5926);
+
+                int count = 0; 
+                while (z.magnitudeSquared() < 4.0 && count < 64) {
+                    z = z.multiply(z);
+                    z = z.add(c);
+                    count++;
+                } // while
+
+                // use count to assign a color to the pixel
+                // at (row, column)
+                if (count == 64) {
+                    raster.setPixel(row, column, dimGray);
+                } // if
+                else {
+                    raster.setPixel(row, column, palatte[count]);
+                } // else
+            } // for
+        } // for
+
+        g2d.drawImage(image, scale, this);
+
+    } // paintComponent(Graphics)
+} // SimpleBitMap
